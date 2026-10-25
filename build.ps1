@@ -68,12 +68,6 @@ Invoke-Checked "$buildTools\apksigner.bat" @('sign','--ks','.signing/development
     '--out','dist/FkOopz-1.2.0.apk','build/aligned.apk')
 Invoke-Checked "$buildTools\apksigner.bat" @('verify','--verbose','dist/FkOopz-1.2.0.apk')
 Invoke-Checked "$buildTools\zipalign.exe" @('-c','-p','4','dist/FkOopz-1.2.0.apk')
-$checksums = foreach ($apk in @('FkOopz-1.1.1.apk', 'FkOopz-1.2.0.apk')) {
-    $apkPath = Join-Path 'dist' $apk
-    if (Test-Path -LiteralPath $apkPath) {
-        $hash = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
-        "$hash  $apk"
-    }
-}
-$checksums | Set-Content -LiteralPath dist/SHA256SUMS.txt -Encoding ascii
+$hash = (Get-FileHash -LiteralPath dist/FkOopz-1.2.0.apk -Algorithm SHA256).Hash.ToLowerInvariant()
+"$hash  FkOopz-1.2.0.apk" | Set-Content -LiteralPath dist/SHA256SUMS.txt -Encoding ascii
 Write-Host "Built: $PSScriptRoot\dist\FkOopz-1.2.0.apk"
