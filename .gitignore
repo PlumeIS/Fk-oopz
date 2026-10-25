@@ -1,0 +1,17 @@
+.tools/
+analysis/*.java
+analysis/*.matches.txt
+analysis/dart-ad-strings.txt
+oopz-1.1.10/
+*.apk
+!dist/FkOopz-1.1.1.apk
+build/
+.gradle/
+local.properties
+*.jks
+*.keystore
+.signing/
+dist/*.idsig
+.idea/
+*.iml
+
