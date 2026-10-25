@@ -6,6 +6,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import com.example.flutter_cjadsdk_plugin.FlutterCjadsdkPlugin;
 import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.XSharedPreferences;
 
 public final class CompatibilityTest {
     // Different minified names, identical Flutter contract.
@@ -52,12 +53,34 @@ public final class CompatibilityTest {
             OopzHook hook = new OopzHook(); install.invoke(hook, new Context(version, 90015));
             check(!installed.getBoolean(hook));
         }
+        // The toggle changes only the version gate, and unreadable settings fail closed.
+        XSharedPreferences.versionCheck = false;
+        OopzHook unlocked = new OopzHook();
+        install.invoke(unlocked, new Context("1.1.11", 90016));
+        check(installed.getBoolean(unlocked));
+        FlutterCjadsdkPlugin otherVersion = new FlutterCjadsdkPlugin();
+        XposedBridge.call(FlutterCjadsdkPlugin.class.getMethod("onMethodCall", q6.h.class, q6.i.d.class),
+                otherVersion, new q6.h("cjLoadAndShowSplashMethod"), (q6.i.d) r -> {});
+        Handler.drain();
+        check(otherVersion.originalDispatches == 0);
+        check(otherVersion.channel.events.contains("splashAdOnClose"));
+        XSharedPreferences.versionCheck = true;
+        OopzHook lockedAgain = new OopzHook();
+        install.invoke(lockedAgain, new Context("1.1.11", 90016));
+        check(!installed.getBoolean(lockedAgain));
+        XSharedPreferences.versionCheck = false;
+        XSharedPreferences.failRead = true;
+        OopzHook unreadable = new OopzHook();
+        install.invoke(unreadable, new Context("1.1.11", 90016));
+        check(!installed.getBoolean(unreadable));
+        XSharedPreferences.failRead = false;
+        XSharedPreferences.versionCheck = null;
         BridgeBinding binding = new BridgeBinding(Plugin.class);
         check(binding.command.getName().equals("renamedMethod"));
         check(binding.reply.getName().equals("renamedSuccess"));
         check(binding.emit.getName().equals("renamedInvoke"));
         try { new BridgeBinding(AmbiguousPlugin.class); throw new AssertionError("Ambiguous channel accepted"); }
         catch (NoSuchMethodException expected) { check(true); }
-        System.out.println("PASS: " + checks + " compatibility regression checks (90013, 90015, renamed Flutter types)");
+        System.out.println("PASS: " + checks + " compatibility checks (versions, setting on/off, read failure, renamed types)");
     }
 }

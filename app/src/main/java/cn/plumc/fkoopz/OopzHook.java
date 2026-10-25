@@ -31,7 +31,7 @@ public final class OopzHook implements IXposedHookLoadPackage {
 
     @Override public void handleLoadPackage(XC_LoadPackage.LoadPackageParam param) {
         if (!TARGET.equals(param.packageName) || !TARGET.equals(param.processName)) return;
-        log("Module 1.1.1 [cn.plumc.fkoopz] loaded in " + param.processName);
+        log("Module 1.2.0 [cn.plumc.fkoopz] loaded in " + param.processName);
         XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class,
                 new XC_MethodHook() {
                     @Override protected void afterHookedMethod(MethodHookParam hook) {
@@ -53,7 +53,9 @@ public final class OopzHook implements IXposedHookLoadPackage {
         if (installed) return;
         try {
             PackageInfo info = context.getPackageManager().getPackageInfo(TARGET, 0);
-            if (!"1.1.10".equals(info.versionName)) {
+            boolean checkVersion = ModuleSettings.isVersionCheckEnabled();
+            log("Version check: " + (checkVersion ? "enabled" : "disabled"));
+            if (checkVersion && !"1.1.10".equals(info.versionName)) {
                 log("Unsupported target " + info.versionName + "/" + info.versionCode);
                 return;
             }

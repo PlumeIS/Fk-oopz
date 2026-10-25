@@ -5,6 +5,7 @@ analysis/dart-ad-strings.txt
 oopz-1.1.10/
 *.apk
 !dist/FkOopz-1.1.1.apk
+!dist/FkOopz-1.2.0.apk
 build/
 .gradle/
 local.properties
@@ -14,4 +15,3 @@ local.properties
 dist/*.idsig
 .idea/
 *.iml
-

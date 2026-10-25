@@ -44,8 +44,9 @@ Invoke-Checked 'javac' @('--release','8','-encoding','UTF-8','-d','build/tests',
     'app/src/main/java/cn/plumc/fkoopz/SplashSession.java','app/src/main/java/cn/plumc/fkoopz/SplashCommands.java',
     'tests/cn/plumc/fkoopz/SplashSessionTest.java')
 Invoke-Checked 'java' @('-cp','build/tests','cn.plumc.fkoopz.SplashSessionTest')
+$hookSources = @($sources | Where-Object { [IO.Path]::GetFileName($_) -ne 'SettingsActivity.java' })
 $fixtures = @(Get-ChildItem -LiteralPath tests/host -Recurse -Filter '*.java' | ForEach-Object FullName)
-Invoke-Checked 'javac' (@('--release','8','-encoding','UTF-8','-classpath',"$androidJar;$XposedApi",'-d','build/tests') + $sources + $fixtures)
+Invoke-Checked 'javac' (@('--release','8','-encoding','UTF-8','-classpath',"$androidJar;$XposedApi",'-d','build/tests') + $hookSources + $fixtures)
 Invoke-Checked 'java' @('-cp',"build/tests;$androidJar;$XposedApi",'cn.plumc.fkoopz.HookWiringTest')
 Invoke-Checked 'java' @('-cp',"build/tests;$androidJar;$XposedApi",'cn.plumc.fkoopz.CompatibilityTest')
 # Only production classes enter module.jar; host fixtures stay under build/tests.
@@ -64,9 +65,15 @@ try {
 Invoke-Checked "$buildTools\zipalign.exe" @('-f','-p','4','build/unsigned.apk','build/aligned.apk')
 Invoke-Checked "$buildTools\apksigner.bat" @('sign','--ks','.signing/development.jks',
     '--ks-key-alias','fkoopz','--ks-pass','pass:android','--key-pass','pass:android',
-    '--out','dist/FkOopz-1.1.1.apk','build/aligned.apk')
-Invoke-Checked "$buildTools\apksigner.bat" @('verify','--verbose','dist/FkOopz-1.1.1.apk')
-Invoke-Checked "$buildTools\zipalign.exe" @('-c','-p','4','dist/FkOopz-1.1.1.apk')
-$hash = (Get-FileHash -LiteralPath dist/FkOopz-1.1.1.apk -Algorithm SHA256).Hash.ToLowerInvariant()
-"$hash  FkOopz-1.1.1.apk" | Set-Content -LiteralPath dist/SHA256SUMS.txt -Encoding ascii
-Write-Host "Built: $PSScriptRoot\dist\FkOopz-1.1.1.apk"
+    '--out','dist/FkOopz-1.2.0.apk','build/aligned.apk')
+Invoke-Checked "$buildTools\apksigner.bat" @('verify','--verbose','dist/FkOopz-1.2.0.apk')
+Invoke-Checked "$buildTools\zipalign.exe" @('-c','-p','4','dist/FkOopz-1.2.0.apk')
+$checksums = foreach ($apk in @('FkOopz-1.1.1.apk', 'FkOopz-1.2.0.apk')) {
+    $apkPath = Join-Path 'dist' $apk
+    if (Test-Path -LiteralPath $apkPath) {
+        $hash = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        "$hash  $apk"
+    }
+}
+$checksums | Set-Content -LiteralPath dist/SHA256SUMS.txt -Encoding ascii
+Write-Host "Built: $PSScriptRoot\dist\FkOopz-1.2.0.apk"
